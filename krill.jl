@@ -2,12 +2,14 @@ using Distributed
 addprocs(4, topology=:master_worker, exeflags="--project=$(Base.active_project())")
 @everywhere begin
     using ProbabilisticEchoInversion
-    using DataFrames, DataFramesMeta
-    using CSV
     using Turing
     using DimensionalData
-    using StatsPlots, StatsPlots.PlotMeasures
 end
+using DataFrames, DataFramesMeta
+using CSV
+using StatsPlots, StatsPlots.PlotMeasures
+using ColorSchemes
+using LinearAlgebra
 
 #=
 Read in files and format as 3D DimArray (Layer x Interval x freq)
@@ -58,7 +60,7 @@ Define TS spectra and model
 ΔTS38 = [-10.0  8.2  0.4;
            0.0  0.0  0.0;
           13.8 -2.1 -1.6;
-          16.3 -2.2 -3.5] # -12.0 is made up
+          16.3 -2.2 -3.5]
 TS38 = [-90 -50 -35]
 TS = TS38 .+ ΔTS38
 Σ = exp10.(TS ./ 10)
@@ -88,18 +90,38 @@ lognprior = [
 ]
 params = (Σ=Σ, prior = lognprior)
 
-# Takes about 3 minutes
+# Takes about 4 minutes
 solution = apes(echo, echo_model, MAPSolver(), params=params, distributed=true)
 
 krill_post = map(passmissing(s -> s.optimizer.values[2]), solution)
 munge_post = map(passmissing(s -> s.optimizer.values[3]), solution)
 pollock_post = map(passmissing(s -> s.optimizer.values[4]), solution)
 
+krill_var = map(passmissing(s -> max(eps(), diag(cov(s))[2])), solution)
+munge_var = map(passmissing(s -> max(eps(), diag(cov(s))[3])), solution)
+pollock_var = map(passmissing(s -> max(eps(), diag(cov(s))[4])), solution)
+
+"""
+Calculate coefficient of variation for lognormal distribution with parameters μ and σ².
+"""
+lognormalcv(μ, σ²) = std(LogNormal(μ, sqrt(σ²))) / mean(LogNormal(μ, sqrt(σ²)))
+krill_cv = passmissing(lognormalcv).(krill_post, krill_var)
+munge_cv = passmissing(lognormalcv).(munge_post, munge_var)
+pollock_cv = passmissing(lognormalcv).(pollock_post, pollock_var)
+
 clims = (-5, 2)
-plot(
+p_mean = plot(
     heatmap(krill_post, yflip=true, clims=clims, colorbar_title="log₁₀(Krill m⁻³)"),
     heatmap(munge_post, yflip=true, clims=clims, colorbar_title="log₁₀(Munge m⁻³)"),
     heatmap(pollock_post, yflip=true, clims=clims, colorbar_title="log₁₀(Pollock m⁻³)"),
-    xlabel="Interval", ylabel="Depth (m)", size=(1000, 600), margin=15px
+    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1)
 )
+
+p_cv = plot(
+    heatmap(krill_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Krill CV"),
+    heatmap(munge_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Munge CV"),
+    heatmap(pollock_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Pollock CV"),
+    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1)
+)
+plot(p_mean, p_cv, size=(1000, 600), leftmargin=10px)
 savefig(joinpath(@__DIR__, "plots", "posteriors.png"))
