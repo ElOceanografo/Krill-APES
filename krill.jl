@@ -109,7 +109,7 @@ krill_cv = passmissing(lognormalcv).(krill_post, krill_var)
 munge_cv = passmissing(lognormalcv).(munge_post, munge_var)
 pollock_cv = passmissing(lognormalcv).(pollock_post, pollock_var)
 
-clims = (-5, 2)
+clims = (-4, 1)
 p_mean = plot(
     heatmap(krill_post, yflip=true, clims=clims, colorbar_title="log₁₀(Krill m⁻³)"),
     heatmap(munge_post, yflip=true, clims=clims, colorbar_title="log₁₀(Munge m⁻³)"),
