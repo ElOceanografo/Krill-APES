@@ -1,0 +1,2 @@
+﻿Process_ID,Program_version,Num_layers,Num_intervals,First_layer_depth_start,Last_layer_depth_stop,Processing_date,Processing_time,EV_filename,Alpha,Gain_constant,Noise_Sv_1m,Minimum_Sv_threshold_applied,Minimum_integration_threshold,Maximum_Sv_threshold_applied,Maximum_integration_threshold,Exclude_above_line_applied,Exclude_below_line_applied
+1251,"12.1.50.43779",101,9884,9.150000,509.150000,20230902, 14:25:32.1100,"U:\DY2207\EV_files\v157-s202207-x2-f38-t008-z0-.ev",0.003041,-9999.000000,-999.000000,0,999.000000,0,999.000000,1,1
