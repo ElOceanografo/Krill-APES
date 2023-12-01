@@ -114,14 +114,31 @@ p_mean = plot(
     heatmap(krill_post, yflip=true, clims=clims, colorbar_title="log₁₀(Krill m⁻³)"),
     heatmap(munge_post, yflip=true, clims=clims, colorbar_title="log₁₀(Munge m⁻³)"),
     heatmap(pollock_post, yflip=true, clims=clims, colorbar_title="log₁₀(Pollock m⁻³)"),
-    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1)
+    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1), xlims=[7000, 9000]
 )
 
 p_cv = plot(
     heatmap(krill_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Krill CV"),
     heatmap(munge_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Munge CV"),
     heatmap(pollock_cv, clims=(0, 5), yflip=true, c=:viridis, colorbar_title="Pollock CV"),
-    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1)
+    xlabel="Interval", ylabel="Depth (m)", layout=(3, 1), xlims=[7000, 9000]
 )
 plot(p_mean, p_cv, size=(1000, 600), leftmargin=10px)
 savefig(joinpath(@__DIR__, "plots", "posteriors.png"))
+
+function high_confidence(x, cv; thresh=1.0, fill=0)
+    x1 = deepcopy(x)
+    for (i, c) in enumerate(cv)
+        if ! ismissing(c)
+            x1[i] = c > thresh ? fill : x1[i]
+        end
+    end
+    return x1
+end
+krill_good = high_confidence(krill_post, krill_cv, fill=-999)
+pollock_good = high_confidence(pollock_post, pollock_cv, fill=-999)
+plot(
+    heatmap(krill_good, yflip=true, clim=(-4, 2)),
+    heatmap(pollock_good, yflip=true, clim=(-4, 2)),
+    layout=(2, 1)
+)
