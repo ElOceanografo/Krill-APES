@@ -140,5 +140,5 @@ pollock_good = high_confidence(pollock_post, pollock_cv, fill=-999)
 plot(
     heatmap(krill_good, yflip=true, clim=(-4, 2)),
     heatmap(pollock_good, yflip=true, clim=(-4, 2)),
-    layout=(2, 1)
+    layout=(2, 1), size=(1000, 600), margin=15px
 )
